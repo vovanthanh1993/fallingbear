@@ -11,12 +11,6 @@ public class DummyKill : MonoBehaviour
         StartCoroutine(KillAfter());
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-
-    }
-
     IEnumerator KillAfter() {
         yield return new WaitForSeconds(6f);
         Destroy(gameObject);

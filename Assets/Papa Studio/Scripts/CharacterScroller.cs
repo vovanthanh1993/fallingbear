@@ -39,6 +39,7 @@ public class CharacterScroller : MonoBehaviour
     List<GameObject> listCharacter = new List<GameObject>();
     GameObject currentCharacter;
     GameObject lastCurrentCharacter;
+    Character currentCharacterData; // Cache Character component để tránh GetComponent mỗi lần (tối ưu cho WebGL)
     IEnumerator rotateCoroutine;
     Vector3 startPos;
     Vector3 endPos;
@@ -47,7 +48,6 @@ public class CharacterScroller : MonoBehaviour
     bool isCurrentCharacterRotating = false;
     bool hasMoved = false;
 
-    // Use this for initialization
     void Start()
     {
         //PlayerPrefs.DeleteAll();
@@ -75,11 +75,33 @@ public class CharacterScroller : MonoBehaviour
         currentCharacter.transform.localScale = maxScale * originalScale;
         currentCharacter.transform.position += moveForwardAmount * Vector3.forward;
         lastCurrentCharacter = null;
+        // Cache Character component
+        currentCharacterData = currentCharacter.GetComponent<Character>();
         StartRotateCurrentCharacter();
+
+        // Khởi tạo UI một lần
+        totalCoins.text = CoinManager.Instance.Coins.ToString();
+        UpdateCharacterInfoUI();
+
+        // Đăng ký event để cập nhật coin khi thay đổi
+        CoinManager.CoinsUpdated += OnCoinsUpdated;
 
         selectButon.onClick.AddListener(PlayClickSound);
         unlockButton.onClick.AddListener(PlayClickSound);
         lockButton.onClick.AddListener(PlayClickSound);
+    }
+
+    void OnDestroy()
+    {
+        // Hủy đăng ký event khi object bị destroy
+        CoinManager.CoinsUpdated -= OnCoinsUpdated;
+    }
+
+    void OnCoinsUpdated(int newCoinsValue)
+    {
+        totalCoins.text = newCoinsValue.ToString();
+        // Cập nhật lại UI button unlock/lock vì có thể đã đủ coin để unlock
+        UpdateCharacterInfoUI();
     }
 
     // Update is called once per frame
@@ -133,6 +155,11 @@ public class CharacterScroller : MonoBehaviour
 
                 // Update current character to the one nearest to center point
                 currentCharacter = FindCharacterNearestToCenter();
+                // Cache Character component khi character thay đổi
+                if (currentCharacter != null)
+                {
+                    currentCharacterData = currentCharacter.GetComponent<Character>();
+                }
 
                 // Snap
                 float snapDistance = centerPoint.x - currentCharacter.transform.position.x;
@@ -141,51 +168,6 @@ public class CharacterScroller : MonoBehaviour
         }
 
         #endregion
-
-        // Update UI
-        totalCoins.text = CoinManager.Instance.Coins.ToString();
-        Character charData = currentCharacter.GetComponent<Character>();
-
-        if (!charData.isFree)
-        {
-            priceText.gameObject.SetActive(true);
-            priceText.text = charData.price.ToString();
-            priceImg.gameObject.SetActive(true);
-
-
-        }
-        else
-        {
-            priceText.gameObject.SetActive(false);
-            priceImg.gameObject.SetActive(false);
-        }
-
-        hPText.text = charData.characterHealth.ToString();
-        scaleText.text = charData.gravityMultiplier.ToString();
-
-        if (currentCharacter != lastCurrentCharacter)
-        {
-            if (charData.IsUnlocked)
-            {
-                unlockButton.gameObject.SetActive(false);
-                lockButton.gameObject.SetActive(false);
-                selectButon.gameObject.SetActive(true);
-            }
-            else
-            {
-                selectButon.gameObject.SetActive(false);
-                if (CoinManager.Instance.Coins >= charData.price)
-                {
-                    unlockButton.gameObject.SetActive(true);
-                    lockButton.gameObject.SetActive(false);
-                }
-                else
-                {
-                    unlockButton.gameObject.SetActive(false);
-                    lockButton.gameObject.SetActive(true);
-                }
-            }
-        }
     }
 
     void MoveAndScale(Transform tf, Vector3 moveVector)
@@ -233,6 +215,55 @@ public class CharacterScroller : MonoBehaviour
         return nearestObj;
     }
 
+    void UpdateCharacterInfoUI()
+    {
+        // Sử dụng cached Character component thay vì GetComponent mỗi lần (tối ưu cho WebGL)
+        if (currentCharacterData == null && currentCharacter != null)
+        {
+            currentCharacterData = currentCharacter.GetComponent<Character>();
+        }
+
+        if (currentCharacterData == null) return;
+
+        Character charData = currentCharacterData;
+
+        if (!charData.isFree)
+        {
+            priceText.gameObject.SetActive(true);
+            priceText.text = charData.price.ToString();
+            priceImg.gameObject.SetActive(true);
+        }
+        else
+        {
+            priceText.gameObject.SetActive(false);
+            priceImg.gameObject.SetActive(false);
+        }
+
+        hPText.text = charData.characterHealth.ToString();
+        scaleText.text = charData.gravityMultiplier.ToString();
+
+        if (charData.IsUnlocked)
+        {
+            unlockButton.gameObject.SetActive(false);
+            lockButton.gameObject.SetActive(false);
+            selectButon.gameObject.SetActive(true);
+        }
+        else
+        {
+            selectButon.gameObject.SetActive(false);
+            if (CoinManager.Instance.Coins >= charData.price)
+            {
+                unlockButton.gameObject.SetActive(true);
+                lockButton.gameObject.SetActive(false);
+            }
+            else
+            {
+                unlockButton.gameObject.SetActive(false);
+                lockButton.gameObject.SetActive(true);
+            }
+        }
+    }
+
     IEnumerator SnapAndRotate(float snapDistance)
     {
         float snapDistanceAbs = Mathf.Abs(snapDistance);
@@ -265,6 +296,9 @@ public class CharacterScroller : MonoBehaviour
 
             // Now rotate the new current character
             StartRotateCurrentCharacter();
+
+            // Cập nhật UI khi character thay đổi
+            UpdateCharacterInfoUI();
         }
     }
 
@@ -317,14 +351,20 @@ public class CharacterScroller : MonoBehaviour
 
     public void UnlockButton()
     {
-        bool unlockSucceeded = currentCharacter.GetComponent<Character>().Unlock();
+        if (currentCharacterData == null) return;
+        
+        bool unlockSucceeded = currentCharacterData.Unlock();
         if (unlockSucceeded)
         {
             SoundManager.Instance.PlaySound(SoundManager.Instance.coin);
 
-            currentCharacter.GetComponent<Renderer>().material.SetColor("_Color", Color.white);
-            unlockButton.gameObject.SetActive(false);
-            selectButon.gameObject.SetActive(true);
+            Renderer renderer = currentCharacter.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.material.SetColor("_Color", Color.white);
+            }
+            // Cập nhật UI sau khi unlock
+            UpdateCharacterInfoUI();
         }
     }
 
@@ -332,7 +372,10 @@ public class CharacterScroller : MonoBehaviour
     {
         SoundManager.Instance.PlaySound(SoundManager.Instance.button);
 
-        CharacterManager.Instance.CurrentCharacterIndex = currentCharacter.GetComponent<Character>().characterSequenceNumber;
+        if (currentCharacterData != null)
+        {
+            CharacterManager.Instance.CurrentCharacterIndex = currentCharacterData.characterSequenceNumber;
+        }
         Exit();
     }
 

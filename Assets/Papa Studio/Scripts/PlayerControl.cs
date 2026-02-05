@@ -58,8 +58,6 @@ public class PlayerControl : MonoBehaviour
     {
         if (!GameManager.instance.GameEnd && !GameManager.instance.GameEndWin)
         {
-            rb.WakeUp();
-
             if (Input.GetMouseButtonDown(0))
             {
                 TransitionHelper.TransitionIn(LeftStick);
@@ -84,8 +82,6 @@ public class PlayerControl : MonoBehaviour
                 TransitionHelper.TransitionOut(stickMan);
                 anim.SetBool("Down", false);
                 rb.WakeUp();
-
-
             }
 
         }
