@@ -10,6 +10,18 @@ public class GroundChecker : MonoBehaviour
     [Header("CineMachine Camera")]
     public CinemachineVirtualCamera vCam1;
     public CinemachineVirtualCamera vCam2;
+    // Start is called before the first frame update
+    void Start()
+    {
+        
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        
+    }
+
     public void OnTriggerEnter(Collider other)
     {
         if (other.gameObject.CompareTag("Ground")) {

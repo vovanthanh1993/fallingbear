@@ -28,6 +28,11 @@ public class SimpleCollectibleScript : MonoBehaviour {
 	[SerializeField] float freezeTime = 2f;
 
 
+	// Use this for initialization
+	void Start () {
+		
+	}
+	
 	// Update is called once per frame
 	void Update () {
 

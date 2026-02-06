@@ -16,6 +16,10 @@ namespace ithappy
             anim = GetComponent<Animator>();
             offsetAnim = Random.Range(0f, 1f);
             anim.Play(titleAnim, 0, offsetAnim);
-        }        
+        }
+
+        void Update()
+        {
+        }
     }
 }

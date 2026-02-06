@@ -9,8 +9,10 @@ public class LevelMaker : MonoBehaviour
 	public Transform StartLine;
 	public GameObject EndTrack;
 
+    // Start is called before the first frame update
     void Start()
-    {		
+    {
+		
 		int RandomLength = Random.Range (3, 9);
 
 		for(int i =0; i<=RandomLength;i++){
@@ -22,6 +24,13 @@ public class LevelMaker : MonoBehaviour
 				Instantiate (EndTrack, StartLine.position, transform.rotation);
 			
 			}
-		}    
+		}
+
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        
     }
 }

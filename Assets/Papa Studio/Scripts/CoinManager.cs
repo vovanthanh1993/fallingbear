@@ -25,6 +25,7 @@ namespace GamePolygon
         // key name to store high score in PlayerPrefs
         const string PPK_COINS = "Gamepolygon_COINS";
 
+
         void Awake()
         {
             if (Instance)
@@ -53,9 +54,9 @@ namespace GamePolygon
         {
             Coins += amount;
 
-            // Store new coin value và save ngay
+
+            // Store new coin value
             PlayerPrefs.SetInt(PPK_COINS, Coins);
-            PlayerPrefs.Save();
 
             // Fire event
             CoinsUpdated(Coins);
@@ -65,9 +66,8 @@ namespace GamePolygon
         {
             Coins -= amount;
 
-            // Store new coin value và save ngay
+            // Store new coin value
             PlayerPrefs.SetInt(PPK_COINS, Coins);
-            PlayerPrefs.Save();
 
             // Fire event
             CoinsUpdated(Coins);

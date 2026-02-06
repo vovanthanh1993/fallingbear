@@ -173,12 +173,19 @@ namespace GamePolygon
             // Memory
             if (showMemory)
             {
-                long memoryMB = System.GC.GetTotalMemory(false) / (1024 * 1024);
-                if (memoryMB < minMemory) minMemory = memoryMB;
-                if (memoryMB > maxMemory) maxMemory = memoryMB;
+                // System.GC.GetTotalMemory() chỉ trả về managed memory (C# heap)
+                // KHÔNG phải total memory của game (textures, meshes, audio, WebGL heap, etc.)
+                // Total memory trên WebGL thường là 200-500 MB, nhưng managed memory chỉ 3-10 MB
+                long managedMemoryMB = System.GC.GetTotalMemory(false) / (1024 * 1024);
+                if (managedMemoryMB < minMemory) minMemory = managedMemoryMB;
+                if (managedMemoryMB > maxMemory) maxMemory = managedMemoryMB;
                 
-                Color memColor = GetMemoryColor(memoryMB);
-                sb.AppendLine($"<color=#{ColorUtility.ToHtmlStringRGB(memColor)}>Memory: {memoryMB} MB (Min: {minMemory}, Max: {maxMemory})</color>");
+                Color memColor = GetMemoryColor(managedMemoryMB);
+                
+                // Hiển thị rõ ràng đây chỉ là managed memory
+                sb.AppendLine($"<color=#{ColorUtility.ToHtmlStringRGB(memColor)}>Managed Mem: {managedMemoryMB} MB</color>");
+                sb.AppendLine($"<color=#ffff00>⚠️ C# Heap only (not total)</color>");
+                sb.AppendLine($"<color=#00ffff>Total: Check DevTools</color>");
             }
             
             // Frame Time
@@ -222,9 +229,12 @@ namespace GamePolygon
         
         Color GetMemoryColor(long memoryMB)
         {
-            if (memoryMB < 200) return goodColor;
-            if (memoryMB < 400) return mediumColor;
-            return badColor;
+            // Managed memory (C# heap) thường nhỏ hơn total memory rất nhiều
+            // Total memory trên WebGL: 200-500 MB
+            // Managed memory: 3-20 MB (chỉ là C# heap)
+            if (memoryMB < 10) return goodColor;  // Managed memory < 10 MB = tốt
+            if (memoryMB < 30) return mediumColor; // Managed memory 10-30 MB = trung bình
+            return badColor; // Managed memory > 30 MB = cần xem xét
         }
         
         Color GetFrameTimeColor(float frameTimeMs)

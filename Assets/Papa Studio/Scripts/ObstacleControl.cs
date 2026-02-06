@@ -5,18 +5,19 @@ using UnityEngine;
 public class ObstacleControl : MonoBehaviour
 {
     GameObject Nuke;
-    ParticleSystem nukeParticleSystem;
     public float triggerCooldown = 1f;
     private bool canTrigger = true;
 
     void Start()
     {
         Nuke = GameObject.Find("NukeExplosion");
-        // Cache ParticleSystem để tránh GetComponent mỗi lần trigger (tối ưu cho WebGL)
-        if (Nuke != null)
-        {
-            nukeParticleSystem = Nuke.GetComponent<ParticleSystem>();
-        }
+
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+
     }
 
 
@@ -28,10 +29,7 @@ public class ObstacleControl : MonoBehaviour
             {
 
                 Nuke.transform.position = collision.gameObject.transform.position;
-                if (nukeParticleSystem != null)
-                {
-                    nukeParticleSystem.Play();
-                }
+                Nuke.GetComponent<ParticleSystem>().Play();
                 StartCoroutine(TriggerCooldown());
 
                 GameManager.instance.PlayerTakeDmg();
